@@ -1,1 +1,88 @@
+create database library_m_system;
+use library_m_system; 
+
+create table Books ( BookID INT PRIMARY KEY,Title VARCHAR(100),Author VARCHAR(100),Genre VARCHAR(50),PublishedYear INT);
+CREATE TABLE Members (MemberID INT PRIMARY KEY,FirstName VARCHAR(50),LastName VARCHAR(50),Email VARCHAR(100),JoinDate DATE); 
+CREATE TABLE Loans (
+    LoanID INT PRIMARY KEY,
+    BookID INT,
+    MemberID INT,
+    LoanDate DATE,
+    ReturnDate DATE,
+    FOREIGN KEY (BookID) REFERENCES Books(BookID),
+    FOREIGN KEY (MemberID) REFERENCES Members(MemberID); 
+ 
+ INSERT INTO Books (BookID, Title, Author, Genre, PublishedYear) VALUES
+(1, 'To Kill a Mockingbird', 'Harper Lee', 'Fiction', 1960),
+(2, '1984', 'George Orwell', 'Dystopian', 1949),
+(3, 'The Great Gatsby', 'F. Scott Fitzgerald', 'Fiction', 1925),
+(4, 'The Catcher in the Rye', 'J.D. Salinger', 'Fiction', 1951),
+(5, 'Pride and Prejudice', 'Jane Austen', 'Romance', 1813);
+INSERT INTO Members (MemberID, FirstName, LastName, Email, JoinDate) VALUES
+(1, 'John', 'Doe', 'john.doe@example.com', '2025-01-10'),
+(2, 'Jane', 'Smith', 'jane.smith@example.com', '2025-02-15'),
+(3, 'Alice', 'Johnson', 'alice.johnson@example.com', '2025-03-05'),
+(4, 'Bob', 'Brown', 'bob.brown@example.com', '2025-04-20'),
+(5, 'Charlie', 'Davis', 'charlie.davis@example.com', '2025-05-01');
+INSERT INTO Loans (LoanID, BookID, MemberID, LoanDate, ReturnDate) VALUES
+(1, 1, 1, '2025-09-01', '2025-09-10'),
+(2, 2, 2, '2025-09-02', '2025-09-12'),
+(3, 3, 3, '2025-09-03', '2025-09-13'),
+(4, 4, 4, '2025-09-04', '2025-09-14'),
+(5, 5, 5, '2025-09-05', '2025-09-15'); 
+
+-- Questions: 
+-- 1. List all books that are currently loaned out. 
+select b.bookid, b.Title, b.Author, b.Genre
+from books b 
+inner join loans l 
+on b.bookid=l.bookid
+where l.returndate>= curdate();
+
+-- 2. Find which member borrowed the most books. 
+SELECT m.MemberID, m.FirstName, m.LastName,
+ COUNT(l.LoanID) AS TotalLoans
+FROM Members m
+JOIN Loans l
+ ON m.MemberID = l.MemberID
+GROUP BY m.MemberID, m.FirstName, m.LastName
+HAVING COUNT(l.LoanID) = (
+    SELECT MAX(BookCount)
+    FROM (
+        SELECT COUNT(LoanID) AS BookCount
+        FROM Loans
+        GROUP BY MemberID
+    ) AS Counts
+);
+
+SELECT m.MemberID, m.FirstName, m.LastName, 
+COUNT(l.LoanID) AS TotalLoans
+FROM Members m
+JOIN Loans l 
+ON m.MemberID = l.MemberID
+GROUP BY m.MemberID, m.FirstName, m.LastName
+ORDER BY TotalLoans DESC;
+
+-- 3. Get the list of books that were never borrowed. 
+SELECT b.BookID, b.Title, b.Author
+FROM Books b
+LEFT JOIN Loans l 
+ON b.BookID = l.BookID
+WHERE l.LoanID IS NULL;
+
+-- 4. Show members who borrowed more than 2 books.  
+select memberid,
+count(*) as totalcount 
+from loans
+group by memberid
+having count(*) >= 2;
+
+
+-- 5. Find the most borrowed book.
+select bookid ,count(*) as borrow_count 
+from loans
+group by bookid
+order by borrow_count desc
+limit 1;
+
 
